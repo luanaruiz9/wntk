@@ -15,6 +15,7 @@ class KernelRegression():
 		self.S = S
 		self.logistic = logistic
 		self.kernel = None
+		self.reg = None
 
 	def computeGradient(self, x, weights, S=None): # x is L-long list with N x n x F[l] elts
 										   # weights is L-long list with F[l+1] x F[l] x K[l] elts
@@ -107,20 +108,11 @@ class KernelRegression():
 			kernel = torch.reshape(kernel,(nTrain*n*Fout,nTest,n2,Fout))
 		else:
 			kernel = torch.reshape(kernel,(nTrain*n,nTest,n2,1))
-		'''
-		predictions = torch.matmul(torch.permute(kernel,(1,2,3,0)),torch.reshape(yTrain,(nTrain*n*Fout,1))) # nTest x n x Fout x 1
-		predictions = torch.squeeze(predictions,3) # nTest x n x Fout
-		if reg is not None:
-			regularization = torch.reshape(reg*torch.eye(nTest,nTrain,device=self.S.device),(nTrain,1,1,nTest,1,1))
-			regularization = torch.tile(regularization,(1,n,Fout,1,n2,Fout))
-			regularization = torch.reshape(regularization,(nTrain*n*Fout,nTest,n2,Fout))
-			kernel = kernel + regularization
-		denominator = torch.matmul(torch.permute(kernel,(1,2,3,0)),torch.ones(nTrain*n*Fout,1,device=self.S.device)) # nTest x n x Fout x 1
-		denominator[denominator==0]=zeroTolerance
-		predictions /= torch.squeeze(denominator,-1)
-        '''
-        
-		reg = self.fit(xTrain, weights, yTrain)
+		if self.reg is None:
+			reg = self.fit(xTrain, weights, yTrain)
+			self.reg = reg 
+		else:
+			reg = self.reg
 		if not self.logistic:
 			X = torch.reshape(kernel,(nTrain*n*Fout,nTest*n2*Fout)).cpu().numpy()
 			predictions = reg.predict(np.transpose(X))
