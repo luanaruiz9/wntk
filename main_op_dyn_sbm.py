@@ -17,9 +17,9 @@ import op_dyn
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-SMALL_SIZE = 10
-MEDIUM_SIZE = 12
-BIGGER_SIZE = 14
+SMALL_SIZE = 14
+MEDIUM_SIZE = 16
+BIGGER_SIZE = 16
 
 plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
 plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
