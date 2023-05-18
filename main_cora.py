@@ -79,7 +79,7 @@ S_large_list = []
 
 # Data
 
-dataset = Planetoid(root='/tmp/cora', name='Cora', split='public')
+dataset = Planetoid(root='/tmp/cora', name='Cora', split='full')
 F0 = dataset.num_node_features
 print(F0)
 C = dataset.num_classes

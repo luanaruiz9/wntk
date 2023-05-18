@@ -79,7 +79,7 @@ S_large_list = []
 
 # Data
 
-dataset = Planetoid(root='/tmp/citeseer', name='CiteSeer', split='public')
+dataset = Planetoid(root='/tmp/citeseer', name='CiteSeer', split='full')
 F0 = dataset.num_node_features
 print(F0)
 F0 = 1000
