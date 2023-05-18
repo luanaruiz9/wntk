@@ -360,7 +360,7 @@ for i in range(len(n_vector)):
     plt.errorbar(np.mean(eig_plot[:,i,:,k]/eig_plot[:,-1,:,k],axis=0),np.arange(0,3),xerr=np.std(eig_plot[:,i,:,k]/eig_plot[:,-1,:,k],axis=0),fmt="o")
 plt.ylabel('Width')
 plt.yticks(np.arange(0,3),['10','50','100'])
-plt.legend(ncols=3)
+plt.legend(ncol=3)
 plt.ylim([-1, 3.5])
 fig.savefig(os.path.join(saveDir,'eigenvalues.pdf'), bbox_inches = 'tight')
 plt.close()

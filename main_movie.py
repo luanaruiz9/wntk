@@ -48,8 +48,8 @@ class objectview(object):
 
 plt.rcParams['text.usetex'] = True
 
-n_realizations = 5
-n_vector = [150, 125, 100, 75]
+n_realizations = 1
+n_vector = [300, 275, 250, 225, 200]
 
 gnn_results = np.zeros((n_realizations, len(n_vector), 3))
 kernel_results = np.zeros((n_realizations, len(n_vector), 3))
@@ -68,16 +68,16 @@ S_large_list = []
 F0 = 1
 C = 1
 
-F = [F0,50]
-MLP = [50,C]
+F = [F0,5]
+MLP = [5,C]
 K = [2]
 
-F2 = [F0,50]
-MLP2 = [50,C]
+F2 = [F0,10]
+MLP2 = [10,C]
 K2 = [2]
 
-F3 = [F0,500]
-MLP3 = [500,C]
+F3 = [F0,50]
+MLP3 = [50,C]
 K3 = [2]
 
 for rlz in range(n_realizations):
@@ -98,7 +98,7 @@ for rlz in range(n_realizations):
 
         # Creating and sparsifying the graph
 
-        S = movie.create_graph(X=X, idxTrain=idxTrain, knn=40)
+        S = movie.create_graph(X=X, idxTrain=idxTrain, knn=5)
         S = (S>zeroTolerance).astype(int)
         print(S.shape)
         n = S.shape[0]
@@ -124,7 +124,7 @@ for rlz in range(n_realizations):
         
         X2, idxContact2 = movie.load_data(movie=257, min_ratings=50)
 
-        S_large = movie.create_graph(X=X2, idxTrain=idxTrain, knn=40)
+        S_large = movie.create_graph(X=X2, idxTrain=idxTrain, knn=5)
         S_large = S_large>zeroTolerance
         N = S_large.shape[0]
         
@@ -284,12 +284,13 @@ for rlz in range(n_realizations):
             
             for batch in test_loader2:
                 yTest2 = batch.y.detach()
-                yTest2 = torch.reshape(yTest2,(nTest,N,-1))
+                print(yTest2.shape)
+                yTest2 = torch.reshape(yTest2,(nTest2,N,-1))
                 featsTest2 = first_model.get_intermediate_features(batch)
                 gnn_preds2 = best_model(batch)
-                gnn_preds2 = torch.reshape(gnn_preds2,(nTest,N,-1)).detach()
+                gnn_preds2 = torch.reshape(gnn_preds2,(nTest2,N,-1)).detach()
             for i in range(len(featsTest2)):
-                featsTest2[i] = torch.reshape(featsTest2[i],(nTest,N,-1)).detach()
+                featsTest2[i] = torch.reshape(featsTest2[i],(nTest2,N,-1)).detach()
     
             kernel_preds2 = kernel.predict(featsTrain,tensor_weight_list,yTrain,featsTest2,torch.tensor(S_large,dtype=torch.float32).to(device))
             
@@ -297,34 +298,6 @@ for rlz in range(n_realizations):
             test_loss2 = torch.nn.functional.mse_loss(kernel_preds2[:,idxContact2],yTest2[:,idxContact2])
             print("Test loss for kernel regression transf.: {0}".format(test_loss2))
             kernel_results_transf[rlz,idx,m_idx] = test_loss2
-            
-            # Plot against projection of xTest onto graph eigenvectors
-            L, V = np.linalg.eig(S_large)
-            ind = np.argsort(-np.abs(L))
-            V = V[:,ind]
-            V = torch.tensor(V,dtype=torch.float32)
-            xPlot = torch.tensordot(featsTest2[0].squeeze().cpu(),V[:,0],dims=([1],[0]))
-            ind = np.argsort(xPlot)
-            x_label[rlz,:] = xPlot[ind]
-            yPlot = torch.tensordot(kernel_preds2.squeeze().cpu(),V[:,0],dims=([1],[0]))
-            yPlot2 = torch.tensordot(gnn_preds2.squeeze().cpu(),V[:,0],dims=([1],[0]))
-            yPlot3 = torch.tensordot(yTest2.squeeze().cpu(),V[:,0],dims=([1],[0]))
-            y_plot_1[rlz,idx,m_idx,:] = yPlot[ind]
-            y_plot_2[rlz,idx,m_idx,:] = yPlot2[ind]
-            y_plot_3[rlz,idx,m_idx,:] = yPlot3[ind]
-            
-            fig = plt.figure()
-            #plt.title('Projection along 1st eigenvector of graph')
-            plt.xlabel('$[\hat{\mathbf{x}}]_1$, sorted')
-            plt.ylabel('$[\hat{\mathbf{y}}]_1$')
-            plt.plot(xPlot[ind],yPlot[ind],label="GNTK")  
-            plt.plot(xPlot[ind],yPlot2[ind],label="GNN") 
-            plt.plot(xPlot[ind],yPlot3[ind],label="True") 
-            plt.legend()
-            #plt.show()
-            fig.savefig(os.path.join(saveDir,'projection-' + model.name + '-' + str(rlz) + '-' + str(idx) + '.pdf'), bbox_inches = 'tight')
-            plt.close()
-            print()
             
         S_list.append(S_aux_list)
         
@@ -363,24 +336,3 @@ for i in range(3):
     #plt.show()
     fig.savefig(os.path.join(saveDir,'transf_kernel_gnn' + str(i) + '.pdf'), bbox_inches = 'tight')
     plt.close()
-
-
-for i in range(len(n_vector)):
-    for m_idx in range(3):
-        fig = plt.figure()
-        #plt.title('Projection along 1st eigenvector of graph')
-        plt.xlabel('$[\hat{\mathbf{x}}]_1$, sorted')
-        plt.ylabel('$[\hat{\mathbf{y}}]_1$')
-        plt.plot(np.mean(x_label,axis=0),np.mean(y_plot_3[:,i,m_idx],axis=0),label="True",color='black') 
-        plt.fill_between(np.mean(x_label,axis=0),np.mean(y_plot_1[:,i,m_idx],axis=0)-np.std(y_plot_1[:,i,m_idx],axis=0),
-                np.mean(y_plot_1[:,i,m_idx],axis=0)+np.std(y_plot_1[:,i,m_idx],axis=0),alpha=0.2,facecolor='#089FFF',
-                linewidth=1, antialiased=True) 
-        plt.plot(np.mean(x_label,axis=0),np.mean(y_plot_1[:,i,m_idx],axis=0),label="GNTK",color='#089FFF')  
-        plt.fill_between(np.mean(x_label,axis=0),np.mean(y_plot_2[:,i,m_idx],axis=0)-np.std(y_plot_2[:,i,m_idx],axis=0),
-                np.mean(y_plot_2[:,i,m_idx],axis=0)+np.std(y_plot_2[:,i,m_idx],axis=0),alpha=0.2,facecolor='#FF9848',
-                linewidth=1, antialiased=True) 
-        plt.plot(np.mean(x_label,axis=0),np.mean(y_plot_2[:,i,m_idx],axis=0),label="GNN",color='#FF9848') 
-        plt.legend()
-        #plt.show()
-        fig.savefig(os.path.join(saveDir,'final_projection-gnn' + str(m_idx) + '-' + str(i) + '.pdf'), bbox_inches = 'tight')
-        plt.close()
