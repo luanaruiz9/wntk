@@ -14,11 +14,11 @@ def load_data(movie, n, min_ratings):
     
     # Extract all from zip file
     dataDir=os.getcwd()
-    zipObject = zipfile.ZipFile(os.path.join(dataDir,'ml-1m.zip'))
+    zipObject = zipfile.ZipFile(os.path.join(dataDir,'ml-100k.zip'))
     zipObject.extractall(dataDir)
     zipObject.close()
     
-    rawDataFilename = os.path.join(dataDir,'ml-1m','ratings.dat')
+    rawDataFilename = os.path.join(dataDir,'ml-100k','ratings.dat')
     
     # Initialize rating matrix
     rawMatrix = np.empty([0, 0]) 
