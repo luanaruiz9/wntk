@@ -27,7 +27,7 @@ def load_data(movie, n, min_ratings):
     # From each row of u.data, extract userID, movieID and rating
     with open(rawDataFilename, 'r') as rawData:
         for dataLine in rawData:
-            dataLineSplit = dataLine.rstrip('\n').split('::')
+            dataLineSplit = dataLine.rstrip('\n').split('\t')
             userID = int(dataLineSplit[0])
             movieID = int(dataLineSplit[1])
             rating = int(dataLineSplit[2])
