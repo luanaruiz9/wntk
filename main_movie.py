@@ -49,7 +49,7 @@ class objectview(object):
 plt.rcParams['text.usetex'] = True
 
 n_realizations = 5
-n_vector = [25, 50, 75, 100]
+n_vector = [10, 20, 30, 40, 50, 60, 70]
 
 gnn_results = np.zeros((n_realizations, len(n_vector), 3))
 kernel_results = np.zeros((n_realizations, len(n_vector), 3))
@@ -118,7 +118,7 @@ for rlz in range(n_realizations):
         
         # Transferability graph and data
         
-        X2, idxContact2 = movie.load_data(movie=257, n=500, min_ratings=10)
+        X2, idxContact2 = movie.load_data(movie=257, n=1682, min_ratings=10)
 
         S_large = movie.create_graph(X=X2, idxTrain=idxTrain, knn=5)
         S_large = S_large>zeroTolerance
