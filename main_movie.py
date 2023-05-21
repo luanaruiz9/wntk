@@ -49,7 +49,7 @@ class objectview(object):
 plt.rcParams['text.usetex'] = True
 
 n_realizations = 5
-n_vector = [25, 50, 75, 100, 125]
+n_vector = [25, 50, 75, 100]
 
 gnn_results = np.zeros((n_realizations, len(n_vector), 3))
 kernel_results = np.zeros((n_realizations, len(n_vector), 3))
