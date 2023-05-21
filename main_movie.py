@@ -48,7 +48,7 @@ class objectview(object):
 
 plt.rcParams['text.usetex'] = True
 
-n_realizations = 1
+n_realizations = 5
 n_vector = [50, 100, 150, 200, 250]
 
 gnn_results = np.zeros((n_realizations, len(n_vector), 3))
