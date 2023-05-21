@@ -122,7 +122,7 @@ for rlz in range(n_realizations):
         
         # Transferability graph and data
         
-        X2, idxContact2 = movie.load_data(movie=257, n=500, nb_ratings=10)
+        X2, idxContact2 = movie.load_data(movie=257, n=500, min_ratings=10)
 
         S_large = movie.create_graph(X=X2, idxTrain=idxTrain, knn=5)
         S_large = S_large>zeroTolerance
