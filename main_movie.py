@@ -240,7 +240,7 @@ for rlz in range(n_realizations):
             print("Test loss: {0}".format(test_loss))
             gnn_results[rlz,idx,m_idx] = test_loss
             # Run test for our best model to save the predictions!
-            test_loader2 = DataLoader(dataTest2, batch_size=nTest, shuffle=False)
+            test_loader2 = DataLoader(dataTest2, batch_size=nTest2, shuffle=False)
             test_loss2 = train_test.test(test_loader2, best_model, idxContact2, N)
             print("Test loss transf.: {0}".format(test_loss2))
             gnn_results_transf[rlz,idx,m_idx] = test_loss2
