@@ -9,6 +9,7 @@ import numpy as np
 import os
 import zipfile # To handle zip files
 import torch as torch
+import torch.nn as nn
 
 def load_data(movie, n, min_ratings):
     
@@ -18,7 +19,7 @@ def load_data(movie, n, min_ratings):
     zipObject.extractall(dataDir)
     zipObject.close()
     
-    rawDataFilename = os.path.join(dataDir,'ml-100k','ratings.dat')
+    rawDataFilename = os.path.join(dataDir,'ml-100k','u.data')
     
     # Initialize rating matrix
     rawMatrix = np.empty([0, 0]) 
