@@ -49,16 +49,12 @@ class objectview(object):
 plt.rcParams['text.usetex'] = True
 
 n_realizations = 5
-n_vector = [50, 100, 150, 200, 250]
+n_vector = [25, 50, 75, 100, 125, 150]
 
 gnn_results = np.zeros((n_realizations, len(n_vector), 3))
 kernel_results = np.zeros((n_realizations, len(n_vector), 3))
 gnn_results_transf = np.zeros((n_realizations, len(n_vector), 3))
 kernel_results_transf = np.zeros((n_realizations, len(n_vector), 3))
-x_label = np.zeros((n_realizations, 61))
-y_plot_1 = np.zeros((n_realizations, len(n_vector), 3, 61))
-y_plot_2 = np.zeros((n_realizations, len(n_vector), 3, 61))
-y_plot_3 = np.zeros((n_realizations, len(n_vector), 3, 61))
 
 S_list = []
 S_large_list = []
