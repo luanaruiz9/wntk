@@ -154,9 +154,9 @@ def split_data(X, idxTrain, idxTest, idxMovie):
     xTrain[:,idxMovie] = 0
     
     xTrain = torch.tensor(xTrain)
-    xTrain = xTrain.reshape([-1,1,N])
+    xTrain = xTrain.reshape([-1,N,1])
     yTrain = torch.tensor(yTrain)
-    yTrain = yTrain.reshape([-1,1,N])
+    yTrain = yTrain.reshape([-1,N,1])
     
     xTest = X[idxTest,:]
     idx = np.argwhere(xTest[:,idxMovie]>0).squeeze()
@@ -166,9 +166,9 @@ def split_data(X, idxTrain, idxTest, idxMovie):
     xTest[:,idxMovie] = 0
     
     xTest = torch.tensor(xTest)
-    xTest = xTest.reshape([-1,1,N])
+    xTest = xTest.reshape([-1,N,1])
     yTest = torch.tensor(yTest)
-    yTest = yTest.reshape([-1,1,N])
+    yTest = yTest.reshape([-1,N,1])
     
     return xTrain, yTrain, xTest, yTest
 
