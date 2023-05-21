@@ -48,8 +48,8 @@ class objectview(object):
 
 plt.rcParams['text.usetex'] = True
 
-n_realizations = 5
-n_vector = [150, 125, 100, 75]
+n_realizations = 2
+n_vector = [75]#[150, 125, 100, 75]
 
 gnn_results = np.zeros((n_realizations, len(n_vector), 3))
 kernel_results = np.zeros((n_realizations, len(n_vector), 3))
@@ -284,12 +284,12 @@ for rlz in range(n_realizations):
             
             for batch in test_loader2:
                 yTest2 = batch.y.detach()
-                yTest2 = torch.reshape(yTest2,(nTest,N,-1))
+                yTest2 = torch.reshape(yTest2,(nTest2,N,-1))
                 featsTest2 = first_model.get_intermediate_features(batch)
                 gnn_preds2 = best_model(batch)
-                gnn_preds2 = torch.reshape(gnn_preds2,(nTest,N,-1)).detach()
+                gnn_preds2 = torch.reshape(gnn_preds2,(nTest2,N,-1)).detach()
             for i in range(len(featsTest2)):
-                featsTest2[i] = torch.reshape(featsTest2[i],(nTest,N,-1)).detach()
+                featsTest2[i] = torch.reshape(featsTest2[i],(nTest2,N,-1)).detach()
     
             kernel_preds2 = kernel.predict(featsTrain,tensor_weight_list,yTrain,featsTest2,torch.tensor(S_large,dtype=torch.float32).to(device))
             
@@ -297,34 +297,6 @@ for rlz in range(n_realizations):
             test_loss2 = torch.nn.functional.mse_loss(kernel_preds2[:,idxContact2],yTest2[:,idxContact2])
             print("Test loss for kernel regression transf.: {0}".format(test_loss2))
             kernel_results_transf[rlz,idx,m_idx] = test_loss2
-            
-            # Plot against projection of xTest onto graph eigenvectors
-            L, V = np.linalg.eig(S_large)
-            ind = np.argsort(-np.abs(L))
-            V = V[:,ind]
-            V = torch.tensor(V,dtype=torch.float32)
-            xPlot = torch.tensordot(featsTest2[0].squeeze().cpu(),V[:,0],dims=([1],[0]))
-            ind = np.argsort(xPlot)
-            x_label[rlz,:] = xPlot[ind]
-            yPlot = torch.tensordot(kernel_preds2.squeeze().cpu(),V[:,0],dims=([1],[0]))
-            yPlot2 = torch.tensordot(gnn_preds2.squeeze().cpu(),V[:,0],dims=([1],[0]))
-            yPlot3 = torch.tensordot(yTest2.squeeze().cpu(),V[:,0],dims=([1],[0]))
-            y_plot_1[rlz,idx,m_idx,:] = yPlot[ind]
-            y_plot_2[rlz,idx,m_idx,:] = yPlot2[ind]
-            y_plot_3[rlz,idx,m_idx,:] = yPlot3[ind]
-            
-            fig = plt.figure()
-            #plt.title('Projection along 1st eigenvector of graph')
-            plt.xlabel('$[\hat{\mathbf{x}}]_1$, sorted')
-            plt.ylabel('$[\hat{\mathbf{y}}]_1$')
-            plt.plot(xPlot[ind],yPlot[ind],label="GNTK")  
-            plt.plot(xPlot[ind],yPlot2[ind],label="GNN") 
-            plt.plot(xPlot[ind],yPlot3[ind],label="True") 
-            plt.legend()
-            #plt.show()
-            fig.savefig(os.path.join(saveDir,'projection-' + model.name + '-' + str(rlz) + '-' + str(idx) + '.pdf'), bbox_inches = 'tight')
-            plt.close()
-            print()
             
         S_list.append(S_aux_list)
         
