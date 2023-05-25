@@ -48,8 +48,8 @@ class objectview(object):
 
 plt.rcParams['text.usetex'] = True
 
-n_realizations = 5
-n_vector = [10, 20, 30, 40, 50, 60, 70]
+n_realizations = 10
+n_vector = [20,40,60,80,100]
 
 gnn_results = np.zeros((n_realizations, len(n_vector), 3))
 kernel_results = np.zeros((n_realizations, len(n_vector), 3))
@@ -64,17 +64,17 @@ S_large_list = []
 F0 = 1
 C = 1
 
-F = [F0,5]
-MLP = [5,C]
-K = [2]
+F = [F0,8]
+MLP = [8,C]
+K = [5]
 
-F2 = [F0,10]
-MLP2 = [10,C]
-K2 = [2]
+F2 = [F0,16]
+MLP2 = [16,C]
+K2 = [5]
 
-F3 = [F0,50]
-MLP3 = [50,C]
-K3 = [2]
+F3 = [F0,32]
+MLP3 = [32,C]
+K3 = [5]
 
 for rlz in range(n_realizations):
     
@@ -84,7 +84,7 @@ for rlz in range(n_realizations):
         
         # Create training graph
         
-        X, idxContact = movie.load_data(movie=257, n=min_r, min_ratings=10)
+        X, idxContact = movie.load_data(movie=257, n=min_r, min_ratings=15)
         nTotal = X.shape[0] # total number of users (samples)
         permutation = np.random.permutation(nTotal)
         nTrain = int(np.ceil(0.9*nTotal)) # number of training samples
@@ -94,7 +94,7 @@ for rlz in range(n_realizations):
 
         # Creating and sparsifying the graph
 
-        S = movie.create_graph(X=X, idxTrain=idxTrain, knn=5)
+        S = movie.create_graph(X=X, idxTrain=idxTrain, knn=10)
         S = (S>zeroTolerance).astype(int)
         print(S.shape)
         n = S.shape[0]
@@ -102,6 +102,8 @@ for rlz in range(n_realizations):
         # Creating the training and test sets
 
         xTrain, yTrain, xTest, yTest = movie.split_data(X, idxTrain, idxTest, idxContact)
+        print(xTrain.shape)
+        print(xTest.shape)
         nTrain = xTrain.shape[0]
         nTest = xTest.shape[0]
         nValid = nTest
@@ -118,9 +120,9 @@ for rlz in range(n_realizations):
         
         # Transferability graph and data
         
-        X2, idxContact2 = movie.load_data(movie=257, n=1682, min_ratings=10)
+        X2, idxContact2 = movie.load_data(movie=257, n=200, min_ratings=15)
 
-        S_large = movie.create_graph(X=X2, idxTrain=idxTrain, knn=5)
+        S_large = movie.create_graph(X=X2, idxTrain=idxTrain, knn=10)
         S_large = S_large>zeroTolerance
         N = S_large.shape[0]
         
@@ -195,7 +197,8 @@ for rlz in range(n_realizations):
         
         loss = movie.movieMSELoss
         for args in [
-                {'batch_size': 32, 'epochs': 20, 'opt': 'adam', 'opt_scheduler': 'none', 'opt_restart': 0, 'weight_decay': 5e-3, 'lr': 0.001},
+                {'batch_size': nTrain, 'epochs': 500, 'opt': 'adam', 
+                 'opt_scheduler': 'step', 'opt_decay_step': 100, 'opt_decay_rate': 0.5, 'weight_decay': 0, 'lr': 0.05},
             ]:
                 args = objectview(args)
         
@@ -218,7 +221,7 @@ for rlz in range(n_realizations):
                         tensor_weight = tensor_weight.unsqueeze(-1)
                     else:
                         tensor_weight = torch.cat((tensor_weight,torch.transpose(weight.unsqueeze(-1).detach(),0,1)),axis=-1)
-                tensor_weight_list.append(tensor_weight/torch.sqrt(torch.tensor(consF[i])))
+                tensor_weight_list.append(tensor_weight/torch.sqrt(torch.tensor(weight.shape[0])))
             
             loader = DataLoader(dataTrain, batch_size=args.batch_size, shuffle=False)
             val_loader = DataLoader(dataValid, batch_size=nValid, shuffle=False)
