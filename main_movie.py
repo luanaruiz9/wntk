@@ -49,7 +49,7 @@ class objectview(object):
 plt.rcParams['text.usetex'] = True
 
 n_realizations = 10
-n_vector = [20,40,60,80,100]
+n_vector = [50,100,150,200,250]
 
 gnn_results = np.zeros((n_realizations, len(n_vector), 3))
 kernel_results = np.zeros((n_realizations, len(n_vector), 3))
@@ -84,9 +84,14 @@ for rlz in range(n_realizations):
         
         # Create training graph
         
-        X, idxContact = movie.load_data(movie=257, n=min_r, min_ratings=15)
+        X, idxContact = movie.load_data(movie=257, n=min_r, min_ratings=20)
         nTotal = X.shape[0] # total number of users (samples)
         permutation = np.random.permutation(nTotal)
+        
+        # Reducing dataset !!!
+        nTotal = int(0.5*nTotal)
+        permutation = permutation[0:nTotal]
+        
         nTrain = int(np.ceil(0.9*nTotal)) # number of training samples
         idxTrain = permutation[0:nTrain] # indices of training samples
         nTest = nTotal-nTrain # number of test samples
@@ -120,7 +125,7 @@ for rlz in range(n_realizations):
         
         # Transferability graph and data
         
-        X2, idxContact2 = movie.load_data(movie=257, n=200, min_ratings=15)
+        X2, idxContact2 = movie.load_data(movie=257, n=500, min_ratings=20)
 
         S_large = movie.create_graph(X=X2, idxTrain=idxTrain, knn=10)
         S_large = S_large>zeroTolerance
@@ -175,7 +180,7 @@ for rlz in range(n_realizations):
         
         GNN = gnn.GNN('gnn1', 'gnn', F, MLP, False, K)
         GNN.to(device)
-        modelList.append(GNN)
+        #modelList.append(GNN)
         
         GNN2 = gnn.GNN('gnn2', 'gnn', F2, MLP2, False, K)
         GNN2.to(device)
@@ -183,7 +188,7 @@ for rlz in range(n_realizations):
         
         GNN3 = gnn.GNN('gnn3', 'gnn', F3, MLP3, False, K)
         GNN3.to(device)
-        modelList.append(GNN3)
+        #modelList.append(GNN3)
         
         SAGE = gnn.GNN('sage', 'sage', F, MLP, False)
         SAGE.to(device)
@@ -197,7 +202,7 @@ for rlz in range(n_realizations):
         
         loss = movie.movieMSELoss
         for args in [
-                {'batch_size': nTrain, 'epochs': 500, 'opt': 'adam', 
+                {'batch_size': nTrain, 'epochs': 100, 'opt': 'adam', 
                  'opt_scheduler': 'step', 'opt_decay_step': 100, 'opt_decay_rate': 0.5, 'weight_decay': 0, 'lr': 0.05},
             ]:
                 args = objectview(args)
