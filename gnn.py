@@ -64,7 +64,7 @@ class GraphFilter(torch.nn.Module):
 
         if self.normalize:
             edge_weight_np = edge_weight.cpu().numpy()
-            edge_index_np = edge_index.numpy()
+            edge_index_np = edge_index.cpu().numpy()
             aux = scipy.sparse.coo_matrix((edge_weight_np, (edge_index_np[0],edge_index_np[1])), shape=(N,N))
             u, s, vh = scipy.sparse.linalg.svds(aux, k=1)
             S = S/s[0]
