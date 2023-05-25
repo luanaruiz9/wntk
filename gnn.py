@@ -23,19 +23,22 @@ def LSIGF(weights, S, x):
     # Loop over the number of filter taps / different degree of S
     for k in range(1, K):        
         # diffusion step, S^k*x
-        x = torch.spmm(S, x) #torch.matmul(x, S) -- slow
+        x = torch.spmm(S, x) 
+        #x = torch.matmul(x, S) -- slow
         # append the S^k*x in the list z
         zs.append(x)
     
     # sum up
     out = [z @ weight/torch.sqrt(torch.tensor(d)) for z, weight in zip(zs, weights)]
+    """/torch.sqrt(torch.tensor(d))""" 
     out = torch.stack(out)
+    #print(out.shape)
     y = torch.sum(out, axis=0)
     return y
 
 class GraphFilter(torch.nn.Module):
 
-    def __init__(self, Fin, Fout, K, normalize=False):
+    def __init__(self, Fin, Fout, K, normalize=True):
 
         super(GraphFilter, self).__init__()
         self.Fin = Fin 
@@ -97,12 +100,12 @@ class GNN(torch.nn.Module):
         for i in range(self.Lmlp-1):
             self.MLPlayers.append(nn.Linear(MLPlist[i],MLPlist[i+1],bias=False))
         #for i in range(self.Lmlp-1):
-        #    self.MLPlayers[i].reset_parameters()
+            #self.MLPlayers[i].reset_parameters()
             
     def forward(self, data):
 
         y, edge_index, edge_weight, batch = data.x, data.edge_index, data.edge_weight, data.batch
-
+        #print(data.x.shape)
         for i, layer in enumerate(self.layers):
             if self.type == 'gnn':
                 y = layer(y, edge_index=edge_index, edge_weight=edge_weight)
@@ -112,6 +115,7 @@ class GNN(torch.nn.Module):
 
         for i, layer in enumerate(self.MLPlayers):
             y = layer(y)/torch.sqrt(torch.tensor(self.MLPlist[i]))
+            y = F.relu(y)
         
         if self.softmax == True:
             y = F.log_softmax(y, dim=1)

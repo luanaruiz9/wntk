@@ -3,6 +3,7 @@ import torch
 import torch.optim as optim
 from tqdm import trange
 import copy
+import movie2
 
 def build_optimizer(args, params):
 
@@ -39,6 +40,7 @@ def train(loader, test_loader, model, loss_function, args, idxMovie=None, n=None
         model.train()
         for batch in loader:
             opt.zero_grad()
+            #print(batch)
             pred = model(batch)
             label = batch.y
             if idxMovie is not None:
@@ -51,19 +53,21 @@ def train(loader, test_loader, model, loss_function, args, idxMovie=None, n=None
                 total_loss += loss.item() * batch.num_graphs
             else:
                 total_loss += loss.item()
-        total_loss /= len(loader.dataset)
+        #total_loss /= len(loader.dataset)
         losses.append(total_loss)
 
-        if epoch % 2 == 0:
+        if epoch % 10 == 0:
           test_loss = test(test_loader, model, idxMovie, n, logistic=logistic)
           test_losses.append(test_loss)
+          print('Training loss', loss.item())
+          print('Test loss', test_loss.item())
           if test_loss < best_loss:
             best_loss = test_loss
             best_model = copy.deepcopy(model)
         else:
           test_losses.append(test_losses[-1])
     
-    return test_losses, losses, best_model, best_loss
+    return test_losses, losses, model, best_loss
 
 def test(loader, test_model, idxMovie=None, n=None, logistic=False):
     test_model.eval()
@@ -74,12 +78,9 @@ def test(loader, test_model, idxMovie=None, n=None, logistic=False):
             label = data.y
         if not logistic:
             if idxMovie is not None:
-                pred = torch.reshape(pred,(-1,n))
-                pred = pred[:,idxMovie]
-                label = torch.reshape(label,(-1,n))
-                label = label[:,idxMovie]
-            loss.append(torch.nn.functional.mse_loss(pred,label).cpu())
+                loss.append(movie2.movieMSELoss(pred,label,idxMovie,n))
+            else:
+                loss.append(torch.nn.functional.mse_loss(torch.reshape(pred,[-1,1]),torch.reshape(label,[-1,1]),reduction='sum').cpu())
         else:
             loss.append(torch.nn.functional.cross_entropy(pred,label).cpu())
-    loss = np.array(loss)
-    return np.mean(loss)
+    return loss[0]
