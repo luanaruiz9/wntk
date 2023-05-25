@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from sklearn.linear_model import LinearRegression, LogisticRegression, Ridge
+from scipy import sparse
 
 # NTK
 
@@ -80,17 +81,21 @@ class KernelRegression():
 		n = gradsTrain.shape[1]
 		Fout = self.F[-1]
 		kernel = torch.tensordot(gradsTrain, gradsTrain, dims=([3],[3])) # nTrain x n x Fout x nTrain x n x Fout
+		print('here')
 		if not self.logistic:
 			self.kernel = torch.reshape(kernel,(nTrain*n*Fout,nTrain*n*Fout))
 			X = self.kernel.cpu().numpy()
+			X = sparse.csr_matrix(X)
 			y = torch.reshape(yTrain,(nTrain*n*Fout,)).cpu().numpy()
 			reg = Ridge(alpha=0.0,fit_intercept=False,solver='lsqr').fit(X,y)
+			print('here')
 		else:
 			class_weights = dict()
 			for i in range(Fout):
 				class_weights[i] = 1
 			self.kernel = torch.reshape(kernel,(nTrain*n,nTrain*n))
 			X = self.kernel.cpu().numpy()
+			X = sparse.csr_matrix(X)
 			y = torch.reshape(yTrain,(nTrain*n,)).cpu().numpy()
 			reg = LogisticRegression(penalty='none',class_weight=class_weights,fit_intercept=False).fit(X,y)
 		return reg
@@ -104,20 +109,26 @@ class KernelRegression():
 		n2 = gradsTest.shape[1]
 		nTest = gradsTest.shape[0]
 		kernel = torch.tensordot(gradsTrain, gradsTest, dims=([3],[3])) # nTrain x n x Fout x nTest x n x Fout
+		print('here 2')
 		if not self.logistic:
 			kernel = torch.reshape(kernel,(nTrain*n*Fout,nTest,n2,Fout))
 		else:
 			kernel = torch.reshape(kernel,(nTrain*n,nTest,n2,1))
 		if self.reg is None:
 			reg = self.fit(xTrain, weights, yTrain)
+			print('here 2')
 			self.reg = reg 
 		else:
 			reg = self.reg
 		if not self.logistic:
 			X = torch.reshape(kernel,(nTrain*n*Fout,nTest*n2*Fout)).cpu().numpy()
+			X = sparse.csr_matrix(X)
+			print('pre here 3')
 			predictions = reg.predict(np.transpose(X))
+			print('here 3')
 		else:
 			X = torch.reshape(kernel,(nTrain*n,nTest*n2)).cpu().numpy()
+			X = sparse.csr_matrix(X)
 			predictions = reg.predict_proba(np.transpose(X))
 		predictions = torch.tensor(predictions,device=gradsTrain.device)
 		return torch.reshape(predictions,(nTest,n2,Fout))

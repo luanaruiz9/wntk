@@ -48,8 +48,8 @@ class objectview(object):
 
 plt.rcParams['text.usetex'] = True
 
-n_realizations = 1
-n_vector = [500]
+n_realizations = 10
+n_vector = [20,40,60,80,100]
 
 gnn_results = np.zeros((n_realizations, len(n_vector), 3))
 kernel_results = np.zeros((n_realizations, len(n_vector), 3))
@@ -64,16 +64,16 @@ S_large_list = []
 F0 = 1
 C = 1
 
-F = [F0,128]
-MLP = [128,C]
+F = [F0,8]
+MLP = [8,C]
 K = [5]
 
-F2 = [F0,10]
-MLP2 = [10,C]
+F2 = [F0,16]
+MLP2 = [16,C]
 K2 = [5]
 
-F3 = [F0,10]
-MLP3 = [10,C]
+F3 = [F0,32]
+MLP3 = [32,C]
 K3 = [5]
 
 for rlz in range(n_realizations):
@@ -84,7 +84,7 @@ for rlz in range(n_realizations):
         
         # Create training graph
         
-        X, idxContact = movie.load_data(movie=49, n=min_r, min_ratings=0)
+        X, idxContact = movie.load_data(movie=257, n=min_r, min_ratings=15)
         nTotal = X.shape[0] # total number of users (samples)
         permutation = np.random.permutation(nTotal)
         nTrain = int(np.ceil(0.9*nTotal)) # number of training samples
@@ -94,7 +94,7 @@ for rlz in range(n_realizations):
 
         # Creating and sparsifying the graph
 
-        S = movie.create_graph(X=X, idxTrain=idxTrain, knn=5)
+        S = movie.create_graph(X=X, idxTrain=idxTrain, knn=10)
         S = (S>zeroTolerance).astype(int)
         print(S.shape)
         n = S.shape[0]
@@ -102,6 +102,8 @@ for rlz in range(n_realizations):
         # Creating the training and test sets
 
         xTrain, yTrain, xTest, yTest = movie.split_data(X, idxTrain, idxTest, idxContact)
+        print(xTrain.shape)
+        print(xTest.shape)
         nTrain = xTrain.shape[0]
         nTest = xTest.shape[0]
         nValid = nTest
@@ -118,10 +120,10 @@ for rlz in range(n_realizations):
         
         # Transferability graph and data
         
-        X2, idxContact2 = movie.load_data(movie=49, n=1682, min_ratings=0)
+        X2, idxContact2 = movie.load_data(movie=257, n=200, min_ratings=15)
 
-        S_large = movie.create_graph(X=X2, idxTrain=idxTrain, knn=5)
-        S_large = (S_large>zeroTolerance).astype(int)
+        S_large = movie.create_graph(X=X2, idxTrain=idxTrain, knn=10)
+        S_large = S_large>zeroTolerance
         N = S_large.shape[0]
         
         _, _, xTest2, yTest2 = movie.split_data(X2, idxTrain, idxTest, idxContact2)
@@ -171,19 +173,13 @@ for rlz in range(n_realizations):
         
         modelList = []
         
-        np.random.seed(0)
-        
         GNN = gnn.GNN('gnn1', 'gnn', F, MLP, False, K)
         GNN.to(device)
         modelList.append(GNN)
         
-        np.random.seed(0)
-        
         GNN2 = gnn.GNN('gnn2', 'gnn', F2, MLP2, False, K)
         GNN2.to(device)
         modelList.append(GNN2)
-        
-        np.random.seed(0)
         
         GNN3 = gnn.GNN('gnn3', 'gnn', F3, MLP3, False, K)
         GNN3.to(device)
@@ -201,16 +197,10 @@ for rlz in range(n_realizations):
         
         loss = movie.movieMSELoss
         for args in [
-                {'batch_size': 32, 'epochs': 500, 'opt': 'adam', 
-                 'opt_scheduler': 'step', 'opt_decay_step': 50, 'opt_decay_rate': 0.5, 'weight_decay': 0, 'lr': 0.1},
+                {'batch_size': nTrain, 'epochs': 500, 'opt': 'adam', 
+                 'opt_scheduler': 'step', 'opt_decay_step': 100, 'opt_decay_rate': 0.5, 'weight_decay': 0, 'lr': 0.05},
             ]:
                 args = objectview(args)
-                
-                
-        loader = DataLoader(dataTrain, batch_size=nTrain, shuffle=False)
-        val_loader = DataLoader(dataValid, batch_size=nTest, shuffle=False)
-        test_loader = DataLoader(dataTest, batch_size=nTest, shuffle=False)
-        test_loader2 = DataLoader(dataTest2, batch_size=nTest2, shuffle=False)
         
         # Training and testing
         
@@ -231,8 +221,10 @@ for rlz in range(n_realizations):
                         tensor_weight = tensor_weight.unsqueeze(-1)
                     else:
                         tensor_weight = torch.cat((tensor_weight,torch.transpose(weight.unsqueeze(-1).detach(),0,1)),axis=-1)
-                tensor_weight_list.append(tensor_weight)
-                                          #/torch.sqrt(torch.tensor(consF[i])))
+                tensor_weight_list.append(tensor_weight/torch.sqrt(torch.tensor(weight.shape[0])))
+            
+            loader = DataLoader(dataTrain, batch_size=args.batch_size, shuffle=False)
+            val_loader = DataLoader(dataValid, batch_size=nValid, shuffle=False)
             
             val_losses, losses, best_model, best_loss = train_test.train(loader, val_loader, model, loss, args, idxContact, n) 
         
@@ -242,11 +234,13 @@ for rlz in range(n_realizations):
             print("Minimum loss: {0}".format(min(losses)))
         
             # Run test for our best model to save the predictions!
-            test_loss = train_test.test(test_loader, model, idxContact, n)
+            test_loader = DataLoader(dataTest, batch_size=nTest, shuffle=False)
+            test_loss = train_test.test(test_loader, best_model, idxContact, n)
             print("Test loss: {0}".format(test_loss))
             gnn_results[rlz,idx,m_idx] = test_loss
             # Run test for our best model to save the predictions!
-            test_loss2 = train_test.test(test_loader2, model, idxContact2, N)
+            test_loader2 = DataLoader(dataTest2, batch_size=nTest2, shuffle=False)
+            test_loss2 = train_test.test(test_loader2, best_model, idxContact2, N)
             print("Test loss transf.: {0}".format(test_loss2))
             gnn_results_transf[rlz,idx,m_idx] = test_loss2
         
@@ -268,7 +262,7 @@ for rlz in range(n_realizations):
                 featsTrain = first_model.get_intermediate_features(batch)
             for i in range(len(featsTrain)):
                 featsTrain[i] = torch.reshape(featsTrain[i],(nTrain,n,-1)).detach()
-"""  
+  
             kernel = ker.KernelRegression(len(consF)-1,consK,consF,torch.tensor(S,dtype=torch.float32).to(device))
                 
             for batch in test_loader:
@@ -302,13 +296,14 @@ for rlz in range(n_realizations):
              # Run test for our best model to save the predictions!
             test_loss2 = torch.nn.functional.mse_loss(kernel_preds2[:,idxContact2],yTest2[:,idxContact2])
             print("Test loss for kernel regression transf.: {0}".format(test_loss2))
-            kernel_results_transf[rlz,idx,m_idx] = test_loss2            
+            kernel_results_transf[rlz,idx,m_idx] = test_loss2
+            
         S_list.append(S_aux_list)
-        """
+        
 # Plots
 
 # Kernel transferability plot
-"""
+
 kernel_transf = np.abs(kernel_results-kernel_results_transf)/kernel_results_transf
 kernel_transf_avg = np.mean(kernel_transf,axis=0)
 kernel_transf_std = np.std(kernel_transf,axis=0)
@@ -322,7 +317,7 @@ for i in range(3):
     #plt.show()
     fig.savefig(os.path.join(saveDir,'transf_kernel' + str(i) + '.pdf'), bbox_inches = 'tight')
     plt.close()
-"""
+
 # GNN and kernel transferability plot
 
 gnn_transf = np.abs(gnn_results-gnn_results_transf)/gnn_results_transf
@@ -334,7 +329,7 @@ for i in range(3):
     #plt.title('Kernel transferability')
     plt.xlabel('Training graph size')
     plt.ylabel('Transferability error')
-    #plt.errorbar(n_vector,kernel_transf_avg[:,i],kernel_transf_std[:,i],label='GNTK')
+    plt.errorbar(n_vector,kernel_transf_avg[:,i],kernel_transf_std[:,i],label='GNTK')
     plt.errorbar(n_vector,gnn_transf_avg[:,i],gnn_transf_std[:,i],label='GNN')
     plt.legend()
     #plt.show()

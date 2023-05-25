@@ -83,4 +83,4 @@ def test(loader, test_model, idxMovie=None, n=None, logistic=False):
                 loss.append(torch.nn.functional.mse_loss(torch.reshape(pred,[-1,1]),torch.reshape(label,[-1,1]),reduction='sum').cpu())
         else:
             loss.append(torch.nn.functional.cross_entropy(pred,label).cpu())
-    return loss[0]
+    return loss[0].cpu().numpy()
