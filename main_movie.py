@@ -48,13 +48,13 @@ class objectview(object):
 
 plt.rcParams['text.usetex'] = True
 
-n_realizations = 10
-n_vector = [50,100,150,200,250]
+n_realizations = 5
+n_vector = [100,200,300,400,500]
 
-gnn_results = np.zeros((n_realizations, len(n_vector), 3))
-kernel_results = np.zeros((n_realizations, len(n_vector), 3))
-gnn_results_transf = np.zeros((n_realizations, len(n_vector), 3))
-kernel_results_transf = np.zeros((n_realizations, len(n_vector), 3))
+gnn_results = np.zeros((n_realizations, len(n_vector), 1))
+kernel_results = np.zeros((n_realizations, len(n_vector), 1))
+gnn_results_transf = np.zeros((n_realizations, len(n_vector), 1))
+kernel_results_transf = np.zeros((n_realizations, len(n_vector), 1))
 
 S_list = []
 S_large_list = []
@@ -84,12 +84,12 @@ for rlz in range(n_realizations):
         
         # Create training graph
         
-        X, idxContact = movie.load_data(movie=257, n=min_r, min_ratings=20)
+        X, idxContact = movie.load_data(movie=257, n=min_r, min_ratings=10)
         nTotal = X.shape[0] # total number of users (samples)
         permutation = np.random.permutation(nTotal)
         
         # Reducing dataset !!!
-        nTotal = int(0.5*nTotal)
+        nTotal = int(0.25*nTotal)
         permutation = permutation[0:nTotal]
         
         nTrain = int(np.ceil(0.9*nTotal)) # number of training samples
@@ -125,7 +125,7 @@ for rlz in range(n_realizations):
         
         # Transferability graph and data
         
-        X2, idxContact2 = movie.load_data(movie=257, n=500, min_ratings=20)
+        X2, idxContact2 = movie.load_data(movie=257, n=1000, min_ratings=10)
 
         S_large = movie.create_graph(X=X2, idxTrain=idxTrain, knn=10)
         S_large = S_large>zeroTolerance
@@ -203,7 +203,7 @@ for rlz in range(n_realizations):
         loss = movie.movieMSELoss
         for args in [
                 {'batch_size': nTrain, 'epochs': 100, 'opt': 'adam', 
-                 'opt_scheduler': 'step', 'opt_decay_step': 100, 'opt_decay_rate': 0.5, 'weight_decay': 0, 'lr': 0.05},
+                 'opt_scheduler': 'step', 'opt_decay_step': 100, 'opt_decay_rate': 0.5, 'weight_decay': 0, 'lr': 0.01},
             ]:
                 args = objectview(args)
         
@@ -313,7 +313,7 @@ kernel_transf = np.abs(kernel_results-kernel_results_transf)/kernel_results_tran
 kernel_transf_avg = np.mean(kernel_transf,axis=0)
 kernel_transf_std = np.std(kernel_transf,axis=0)
 
-for i in range(3):
+for i in range(1):
     fig = plt.figure()
     #plt.title('Kernel transferability')
     plt.xlabel('Graph size ($n$)')
@@ -329,7 +329,7 @@ gnn_transf = np.abs(gnn_results-gnn_results_transf)/gnn_results_transf
 gnn_transf_avg = np.mean(gnn_transf,axis=0)
 gnn_transf_std = np.std(gnn_transf,axis=0)
 
-for i in range(3):
+for i in range(1):
     fig = plt.figure()
     #plt.title('Kernel transferability')
     plt.xlabel('Training graph size')
