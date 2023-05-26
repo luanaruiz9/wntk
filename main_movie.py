@@ -11,6 +11,7 @@ from torch_geometric.data import Data
 from torch_geometric.loader import DataLoader
 
 import matplotlib.pyplot as plt
+import pandas as pd
 
 import gnn
 import train_test
@@ -340,3 +341,11 @@ for i in range(1):
     #plt.show()
     fig.savefig(os.path.join(saveDir,'transf_kernel_gnn' + str(i) + '.pdf'), bbox_inches = 'tight')
     plt.close()
+
+
+d = {'col1': list(kernel_transf_avg.squeeze()), 'col2': list(kernel_transf_std.squeeze()), 
+     'col3': list(gnn_transf_avg.squeeze()), 'col4': list(gnn_transf_std.squeeze())}
+print(d.values())
+print(d.keys())
+df = pd.DataFrame(d.values(),index=d.keys(),columns=n_vector)
+df.to_excel(os.path.join(saveDir,"transf_results.xlsx"))  
